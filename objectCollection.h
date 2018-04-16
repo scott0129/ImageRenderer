@@ -63,7 +63,7 @@ private:
 
   void recPrint(BVMNode* root) {
     if (root == NULL) {return;}
-    std::cout << "hiPoint is: " << root->hiPoint.toString() << " and loPoint is: " << root->loPoint.toString();
+    std::cout << "hiPoint is: " << root->hiPoint.toString() << " and loPoint is: " << root->loPoint.toString() << " axis: " << root->axis << " ";
     if (root->isLeaf()) {
       std::cout << "<- leaf containing " << root->obj->getCenter().toString();
       std::cout << " leafLoPoint: " << root->obj->loCorner().toString();

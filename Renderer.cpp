@@ -115,7 +115,8 @@ png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, V
 }
 
 void Renderer::run() {
-  srand(4);
+
+  srand(5);
 
   std::cout << "Beginning to draw " << NUM_SPHERES << " spheres, starting at: " << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
 
@@ -128,7 +129,7 @@ void Renderer::run() {
     png::color ambient = png::color(rand()%255, rand()%255, rand()%255);
     png::color diffuse = png::color(rand()%255, rand()%255, rand()%255);
     png::color specular = png::color(rand()%255, rand()%255, rand()%255);
-    Sphere* s = new Sphere(sphereLoc, 5, ambient, diffuse, specular, 30);
+    Sphere* s = new Sphere(sphereLoc, 7, ambient, diffuse, specular, 30);
     objectsList[i] = s;
     if (sphereLoc[0] == 373.0) {
       std::cout << "brokenSphere High: " << s->hiCorner().toString() << " low: " << s->loCorner().toString() << std::endl;

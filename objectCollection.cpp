@@ -4,6 +4,15 @@
 
 
 void recInsert(BVM::BVMNode* subroot, Hittable* object) {
+  //every node it enters, if the object is bigger than the node, expand the node
+  for (int i = 0; i < 3; i++) {
+    if (object->hiCorner()[i] > subroot->hiPoint[i]) {
+      subroot->hiPoint[i] = object->hiCorner()[i];
+    }
+    if (object->loCorner()[i] < subroot->loPoint[i]) {
+      subroot->loPoint[i] = object->loCorner()[i];
+    }
+  }
   if ( subroot->isLeaf() ) {
     if (subroot->obj == NULL) {
       //If it's a leaf and there's no object (only happens at root) put it there.
@@ -70,27 +79,28 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
 
     }
   } else {
+
     if (object->getCenter()[subroot->axis] < subroot->left->hiPoint[subroot->axis] ) {
       recInsert(subroot->left, object);
     } else {
       recInsert(subroot->right, object);
     }
-    for (int i = 0; i < 3; i++) {
-      if (subroot->right->hiPoint[i] > subroot->hiPoint[i]) {
-        subroot->hiPoint[i] = subroot->right->hiPoint[i];
-      }
-      if (subroot->left->hiPoint[i] > subroot->hiPoint[i]) {
-        subroot->hiPoint[i] = subroot->left->hiPoint[i];
-      }
-
-      if (subroot->left->loPoint[i] < subroot->loPoint[i]) {
-        subroot->loPoint[i] = subroot->left->loPoint[i];
-      }
-      if (subroot->right->loPoint[i] < subroot->loPoint[i]) {
-        subroot->loPoint[i] = subroot->right->loPoint[i];
-      }
-
-    }
+    // for (int i = 0; i < 3; i++) {
+    //   if (subroot->right->hiPoint[i] > subroot->hiPoint[i]) {
+    //     subroot->hiPoint[i] = subroot->right->hiPoint[i];
+    //   }
+    //   if (subroot->left->hiPoint[i] > subroot->hiPoint[i]) {
+    //     subroot->hiPoint[i] = subroot->left->hiPoint[i];
+    //   }
+    //
+    //   if (subroot->left->loPoint[i] < subroot->loPoint[i]) {
+    //     subroot->loPoint[i] = subroot->left->loPoint[i];
+    //   }
+    //   if (subroot->right->loPoint[i] < subroot->loPoint[i]) {
+    //     subroot->loPoint[i] = subroot->right->loPoint[i];
+    //   }
+    //
+    // }
   }
 }
 
