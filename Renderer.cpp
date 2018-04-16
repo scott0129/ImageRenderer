@@ -4,21 +4,22 @@
 int const RES_WIDTH= 500;
 int const RES_HEIGHT = 500;
 
-int const NUM_SPHERES = 100;
+int const NUM_SPHERES = 500;
 
-double const PIX_SIZE = 0.1;
+double const PIX_SIZE = .1;
 
 double const FOCAL_DIST = 50;
 
 //Anti-aliasing coeff. Number of vectors shot through each pixel.
-int const AA_COEFF = 10;
+int const AA_COEFF = 1;
 
 Vector const LIGHT_DIRECTION = Vector(-0.6, 0.6, 0.6).normalize();
 png::color const LIGHT_COLOR = png::color(255, 255, 255);
 
 png::color const AMBIENT_COLOR = png::color(255, 255, 255);
 
-bool const ORTHOGRAPHIC = false;
+bool const ORTHOGRAPHIC = false
+;
 
 double Renderer::logit(double input) {
   return -log(1.0/((input+1)/2) - 1);
@@ -114,25 +115,63 @@ png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, V
 }
 
 void Renderer::run() {
-  srand(AA_COEFF);
+  srand(4);
 
   std::cout << "Beginning to draw " << NUM_SPHERES << " spheres, starting at: " << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
 
 
   Hittable* objectsList[NUM_SPHERES];
 
+  //generate all spheres and save in array
   for (int i = 0; i < NUM_SPHERES; i++) {
     Vector sphereLoc = Vector(300 + rand()%100, rand()%200 - 100, rand()%200 - 100);
     png::color ambient = png::color(rand()%255, rand()%255, rand()%255);
     png::color diffuse = png::color(rand()%255, rand()%255, rand()%255);
     png::color specular = png::color(rand()%255, rand()%255, rand()%255);
-    Sphere* s = new Sphere(sphereLoc, 10, ambient, diffuse, specular, 30);
+    Sphere* s = new Sphere(sphereLoc, 5, ambient, diffuse, specular, 30);
     objectsList[i] = s;
+    if (sphereLoc[0] == 373.0) {
+      std::cout << "brokenSphere High: " << s->hiCorner().toString() << " low: " << s->loCorner().toString() << std::endl;
+    }
   }
 
 
-  BVM objCollection = BVM(objectsList, NUM_SPHERES, Vector(298, -102, -102), Vector(402, 102, 102));
+
+  //find lowest point and highest bound of all objects
+  Vector lowest = objectsList[0]->loCorner();
+  Vector highest = objectsList[0]->hiCorner();
+  for (int i = 1; i < NUM_SPHERES; i++) {
+    Vector currentLo = objectsList[i]->loCorner();
+    Vector currentHi = objectsList[i]->hiCorner();
+    for (int dim = 0; dim < 3; dim++) {
+      if (currentLo[dim] < lowest[dim]) {
+        lowest[dim] = currentLo[dim];
+      }
+      if (currentHi[dim] > highest[dim]) {
+        highest[dim] = currentHi[dim];
+      }
+    }
+  }
+
+  std::cout << highest.toString() << " " << lowest.toString() << std::endl;
+
+  // png::color ambient1 = png::color(rand()%255, rand()%255, rand()%255);
+  // png::color diffuse1 = png::color(rand()%255, rand()%255, rand()%255);
+  // png::color specular1 = png::color(rand()%255, rand()%255, rand()%255);
+  // Sphere* s1 = new Sphere(lowest, 3, ambient1, diffuse1, specular1, 30);
+  //
+  // png::color ambient2 = png::color(rand()%255, rand()%255, rand()%255);
+  // png::color diffuse2 = png::color(rand()%255, rand()%255, rand()%255);
+  // png::color specular2 = png::color(rand()%255, rand()%255, rand()%255);
+  // Sphere* s2 = new Sphere(highest, 3, ambient2, diffuse2, specular2, 30);
+  // objectsList[NUM_SPHERES - 1] = s1;
+  // objectsList[NUM_SPHERES - 2] = s2;
+
+
+  BVM objCollection = BVM(objectsList, NUM_SPHERES, lowest, highest);
   //nonBVM objCollection = nonBVM(objectsList, NUM_SPHERES);
+
+  objCollection.printTree();
 
   std::cout << "Finished building tree by "  << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
 
@@ -174,19 +213,8 @@ void Renderer::run() {
 
         //Finding the closest "collision", looking through every object
         double minT = nan("1");
-        Hittable* closestObj;
-        /*
-        for(Hittable* obj : objectsList) {
-          double tVal = obj->collideT(pixPoint, pixVect);
-          if ((isnan(minT) && !isnan(tVal) )|| tVal < minT) {
-            minT = tVal;
-            closestObj = obj;
-          }
-        }
-        //if it collides
-        if ( !isnan(minT) ) { */
 
-        closestObj = objCollection.intersect(pixPoint, pixVect);
+        Hittable* closestObj = objCollection.intersect(pixPoint, pixVect);
         if (closestObj != NULL) {
           minT = closestObj->collideT(pixPoint, pixVect);
 

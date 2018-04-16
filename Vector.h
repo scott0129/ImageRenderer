@@ -84,7 +84,15 @@ public:
 
 
   std::string toString() const {
-    return "x: " + std::to_string(x) + ", y:" + std::to_string(y) + ", z:" + std::to_string(z);
+    std::string xStr = std::to_string (x);
+    xStr.erase ( xStr.find_last_not_of('0') + 1, std::string::npos );
+
+    std::string yStr = std::to_string (y);
+    yStr.erase ( yStr.find_last_not_of('0') + 1, std::string::npos );
+
+    std::string zStr = std::to_string (z);
+    zStr.erase ( zStr.find_last_not_of('0') + 1, std::string::npos );
+    return "(" + xStr + ", " + yStr + ", " + zStr + ")";
   }
 
   double x;

@@ -38,7 +38,7 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
       subroot->left = new BVM::BVMNode(subroot->loPoint, newHi);
       subroot->right = new BVM::BVMNode(newLo, subroot->hiPoint);
 
-      //Giving the appropriate subtree the appropriate object for e-z searching.
+      //Giving the appropriate subtree the appropriate object for easy searching.
       if (subroot->obj->getCenter()[axis] < divide) {
         subroot->left->obj = subroot->obj;
         subroot->right->obj = object;
@@ -48,23 +48,48 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
       }
 
       //These next if statements allow for overlap, so that objects don't get "cut"
+      for (int i = 0; i < 3; i++) {
+        if (subroot->left->hiPoint[i] < subroot->left->obj->hiCorner()[i]) {
+          subroot->left->hiPoint[i] = subroot->left->obj->hiCorner()[i];
+        }
+        if (subroot->right->loPoint[i] > subroot->right->obj->loCorner()[i]) {
+          subroot->right->loPoint[i] = subroot->right->obj->loCorner()[i];
+        }
 
-      if (subroot->left->hiPoint[axis] < subroot->left->obj->hiCorner()[axis]) {
-        subroot->left->hiPoint[axis] = subroot->left->obj->hiCorner()[axis];
+        if (subroot->left->loPoint[i] > subroot->left->obj->loCorner()[i]) {
+          subroot->left->loPoint[i] = subroot->left->obj->loCorner()[i];
+          subroot->loPoint[i] = subroot->left->loPoint[i];
+        }
+
+        if (subroot->right->hiPoint[i] < subroot->right->obj->hiCorner()[i]) {
+          subroot->right->hiPoint[i] = subroot->right->obj->hiCorner()[i];
+          subroot->hiPoint[i] = subroot->right->hiPoint[i];
+        }
+
       }
-      if (subroot->right->loPoint[axis] > subroot->right->obj->loCorner()[axis]) {
-        subroot->right->loPoint[axis] = subroot->right->obj->loCorner()[axis];
-      }
+
     }
   } else {
-    if (object->getCenter()[subroot->axis] < subroot->divide) {
-      //following if statement is a clip-guard
-
+    if (object->getCenter()[subroot->axis] < subroot->left->hiPoint[subroot->axis] ) {
       recInsert(subroot->left, object);
     } else {
-      //following if statement is a clip-guard
-
       recInsert(subroot->right, object);
+    }
+    for (int i = 0; i < 3; i++) {
+      if (subroot->right->hiPoint[i] > subroot->hiPoint[i]) {
+        subroot->hiPoint[i] = subroot->right->hiPoint[i];
+      }
+      if (subroot->left->hiPoint[i] > subroot->hiPoint[i]) {
+        subroot->hiPoint[i] = subroot->left->hiPoint[i];
+      }
+
+      if (subroot->left->loPoint[i] < subroot->loPoint[i]) {
+        subroot->loPoint[i] = subroot->left->loPoint[i];
+      }
+      if (subroot->right->loPoint[i] < subroot->loPoint[i]) {
+        subroot->loPoint[i] = subroot->right->loPoint[i];
+      }
+
     }
   }
 }
@@ -113,6 +138,9 @@ bool boxIntersect(Vector origin, Vector direction, Vector lo, Vector hi) {
 }
 
 Hittable* recIntersect(BVM::BVMNode* subroot, Vector pos, Vector vect) {
+  if (subroot == NULL) {
+    return NULL;
+  }
   if (subroot->isLeaf()) {
 
     if (isnan(subroot->obj->collideT(pos, vect))) {
@@ -120,7 +148,8 @@ Hittable* recIntersect(BVM::BVMNode* subroot, Vector pos, Vector vect) {
     } else {
       return subroot->obj;
     }
-  } else if (subroot == NULL || !boxIntersect(pos, vect, subroot->loPoint, subroot->hiPoint)) {
+
+  } else if (!boxIntersect(pos, vect, subroot->loPoint, subroot->hiPoint)) {
     return NULL;
   }
   Hittable* leftResult = recIntersect(subroot->left, pos, vect);
@@ -141,6 +170,8 @@ Hittable* recIntersect(BVM::BVMNode* subroot, Vector pos, Vector vect) {
 Hittable* BVM::intersect(Vector pos, Vector vect) {
   return recIntersect(root, pos, vect);
 }
+
+
 
 nonBVM::nonBVM(Hittable** objArray, size_t size) {
   setSize(size);

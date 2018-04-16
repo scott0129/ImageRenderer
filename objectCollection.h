@@ -53,10 +53,25 @@ public:
 
   BVM(Hittable** objArray, size_t size, Vector low, Vector high);
   Hittable* intersect(Vector pos, Vector vect);
+  void printTree() {
+    recPrint(root);
+  }
 
 private:
   bool isLeaf(BVMNode node);
   BVMNode* root;
+
+  void recPrint(BVMNode* root) {
+    if (root == NULL) {return;}
+    std::cout << "hiPoint is: " << root->hiPoint.toString() << " and loPoint is: " << root->loPoint.toString();
+    if (root->isLeaf()) {
+      std::cout << "<- leaf containing " << root->obj->getCenter().toString();
+      std::cout << " leafLoPoint: " << root->obj->loCorner().toString();
+    }
+    std::cout << std::endl;
+    recPrint(root->left);
+    recPrint(root->right);
+  }
 
 };
 
