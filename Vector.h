@@ -39,17 +39,16 @@ public:
     return Vector(this->y, -this->x, 0).normalize();
   }
 
-
-  Vector cross(const Vector& other) const {
-    double newX = this->y * other.z - this->z * other.y;
-    double newY = this->z * other.x - this->x * other.z;
-    double newZ = this->x * other.y - this->y * other.x;
+  Vector cross(const Vector* other) const {
+    double newX = this->y * other->z - this->z * other->y;
+    double newY = this->z * other->x - this->x * other->z;
+    double newZ = this->x * other->y - this->y * other->x;
     return Vector(newX, newY, newZ);
   }
 
 
-  double dot(const Vector& other) const {
-    return (this->x * other.x + this->y * other.y + this->z * other.z);
+  double dot(const Vector* other) const {
+    return (this->x * other->x + this->y * other->y + this->z * other->z);
   }
 
   Vector scalar(double mult) const {
@@ -72,6 +71,17 @@ public:
       return false;
     } else {
       return true;
+    }
+  }
+
+  double& get(int i) {
+    switch(i) {
+      case 0:
+      return x;
+      case 1:
+      return y;
+      default:
+      return z;
     }
   }
 

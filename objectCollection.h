@@ -10,7 +10,7 @@
 class objectCollection {
 public:
 
-  virtual Hittable* intersect(Vector pos, Vector vect) = 0;
+  virtual Hittable* intersect(Vector* pos, Vector* vect) = 0;
 
   void setSize(size_t newSize) {size = newSize;}
   size_t getSize() { return size; }
@@ -26,10 +26,17 @@ public:
 
   struct BVMNode {
 
-    BVMNode(Vector lo, Vector hi) : axis(-1), left(NULL), right(NULL), obj(NULL) {
-      loPoint = lo;
-      hiPoint = hi;
+    BVMNode(Vector* lo, Vector* hi) : axis(-1), left(NULL), right(NULL), obj(NULL) {
+      loPoint = new Vector(*lo);
+      hiPoint = new Vector(*hi);
     };
+
+    ~BVMNode() {
+        delete loPoint;
+        delete hiPoint;
+        delete left;
+        delete right;
+    }
 
     bool isLeaf() {
       return (left == NULL && right == NULL);
@@ -38,8 +45,8 @@ public:
     int axis;
     double divide;
 
-    Vector loPoint;
-    Vector hiPoint;
+    Vector* loPoint;
+    Vector* hiPoint;
 
     BVMNode* left;
     BVMNode* right;
@@ -48,9 +55,9 @@ public:
 
   };
 
-  BVM(std::vector<Hittable*> objArray, Vector low, Vector high);
+  BVM(std::vector<Hittable*> objArray, Vector* low, Vector* high);
 
-  Hittable* intersect(Vector pos, Vector vect);
+  Hittable* intersect(Vector* pos, Vector* vect);
 
   void printTree() {
     recPrint(root);
@@ -62,7 +69,7 @@ private:
 
   void recPrint(BVMNode* root) {
     if (root == NULL) {return;}
-    std::cout << "hiPoint is: " << root->hiPoint.toString() << " and loPoint is: " << root->loPoint.toString() << " axis: " << root->axis << " ";
+    std::cout << "hiPoint is: " << root->hiPoint->toString() << " and loPoint is: " << root->loPoint->toString() << " axis: " << root->axis << " ";
     if (root->isLeaf()) {
       std::cout << "<- leaf containing " << root->obj->getCenter().toString();
       std::cout << " leafLoPoint: " << root->obj->loCorner().toString();
@@ -77,7 +84,7 @@ private:
 class nonBVM : public objectCollection {
 public:
   nonBVM(std::vector<Hittable*> list, Vector low, Vector high);
-  Hittable* intersect(Vector pos, Vector vect);
+  Hittable* intersect(Vector* pos, Vector* vect);
 
 private:
   std::vector<Hittable*> _list;

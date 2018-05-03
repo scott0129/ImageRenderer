@@ -29,7 +29,7 @@ private:
 
   png::color pixelAdd(png::color color1, png::color color2);
 
-  png::color phongModel(Vector castPoint, Vector castRay, double tVal, Vector toLight, Hittable* object);
+  png::color phongModel(const Vector* castPoint, const Vector* castRay, double tVal, const Vector* toLight, Hittable* object);
 
 
 };

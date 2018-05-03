@@ -6,11 +6,11 @@
 void recInsert(BVM::BVMNode* subroot, Hittable* object) {
   //every node it enters, if the object is bigger than the node, expand the node
   for (int i = 0; i < 3; i++) {
-    if (object->hiCorner()[i] > subroot->hiPoint[i]) {
-      subroot->hiPoint[i] = object->hiCorner()[i];
+    if (object->hiCorner()[i] > subroot->hiPoint->get(i)) {
+      subroot->hiPoint->get(i) = object->hiCorner()[i];
     }
-    if (object->loCorner()[i] < subroot->loPoint[i]) {
-      subroot->loPoint[i] = object->loCorner()[i];
+    if (object->loCorner()[i] < subroot->loPoint->get(i)) {
+      subroot->loPoint->get(i) = object->loCorner()[i];
     }
   }
   if ( subroot->isLeaf() ) {
@@ -27,21 +27,21 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
       int axis = subroot->axis;
       double divide = (subroot->obj->getCenter()[axis] + object->getCenter()[axis])/2.0;
       subroot->divide = divide;
-      Vector newHi;
-      Vector newLo;
+      Vector* newHi;
+      Vector* newLo;
       //Deciding which axis to divide on
       switch(axis) {
         case 0:
-        newHi = Vector(divide, subroot->hiPoint.y, subroot->hiPoint.z);
-        newLo = Vector(divide, subroot->loPoint.y, subroot->loPoint.z);
+        newHi = new Vector(divide, subroot->hiPoint->y, subroot->hiPoint->z);
+        newLo = new Vector(divide, subroot->loPoint->y, subroot->loPoint->z);
         break;
         case 1:
-        newHi = Vector(subroot->hiPoint.x, divide, subroot->hiPoint.z);
-        newLo = Vector(subroot->loPoint.x, divide, subroot->loPoint.z);
+        newHi = new Vector(subroot->hiPoint->x, divide, subroot->hiPoint->z);
+        newLo = new Vector(subroot->loPoint->x, divide, subroot->loPoint->z);
         break;
         default:
-        newHi = Vector(subroot->hiPoint.x, subroot->hiPoint.y, divide);
-        newLo = Vector(subroot->loPoint.x, subroot->loPoint.y, divide);
+        newHi = new Vector(subroot->hiPoint->x, subroot->hiPoint->y, divide);
+        newLo = new Vector(subroot->loPoint->x, subroot->loPoint->y, divide);
       }
 
       subroot->left = new BVM::BVMNode(subroot->loPoint, newHi);
@@ -58,21 +58,22 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
 
       //These next if statements allow for overlap, so that objects don't get "cut"
       for (int i = 0; i < 3; i++) {
-        if (subroot->left->hiPoint[i] < subroot->left->obj->hiCorner()[i]) {
-          subroot->left->hiPoint[i] = subroot->left->obj->hiCorner()[i];
+        if (subroot->left->hiPoint->get(i) < subroot->left->obj->hiCorner()[i]) {
+            //@TODO there should be something weird with the hiPoint[]?
+          subroot->left->hiPoint->get(i) = subroot->left->obj->hiCorner()[i];
         }
-        if (subroot->right->loPoint[i] > subroot->right->obj->loCorner()[i]) {
-          subroot->right->loPoint[i] = subroot->right->obj->loCorner()[i];
-        }
-
-        if (subroot->left->loPoint[i] > subroot->left->obj->loCorner()[i]) {
-          subroot->left->loPoint[i] = subroot->left->obj->loCorner()[i];
-          subroot->loPoint[i] = subroot->left->loPoint[i];
+        if (subroot->right->loPoint->get(i) > subroot->right->obj->loCorner()[i]) {
+          subroot->right->loPoint->get(i) = subroot->right->obj->loCorner()[i];
         }
 
-        if (subroot->right->hiPoint[i] < subroot->right->obj->hiCorner()[i]) {
-          subroot->right->hiPoint[i] = subroot->right->obj->hiCorner()[i];
-          subroot->hiPoint[i] = subroot->right->hiPoint[i];
+        if (subroot->left->loPoint->get(i) > subroot->left->obj->loCorner()[i]) {
+          subroot->left->loPoint->get(i) = subroot->left->obj->loCorner()[i];
+          subroot->loPoint->get(i) = subroot->left->loPoint->get(i);
+        }
+
+        if (subroot->right->hiPoint->get(i) < subroot->right->obj->hiCorner()[i]) {
+          subroot->right->hiPoint->get(i) = subroot->right->obj->hiCorner()[i];
+          subroot->hiPoint->get(i) = subroot->right->hiPoint->get(i);
         }
 
       }
@@ -80,7 +81,7 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
     }
   } else {
 
-    if (object->getCenter()[subroot->axis] < subroot->left->hiPoint[subroot->axis] ) {
+    if (object->getCenter()[subroot->axis] < subroot->left->hiPoint->get(subroot->axis) ) {
       recInsert(subroot->left, object);
     } else {
       recInsert(subroot->right, object);
@@ -104,7 +105,7 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
   }
 }
 
-BVM::BVM(std::vector<Hittable*> objArray, Vector low, Vector high) {
+BVM::BVM(std::vector<Hittable*> objArray, Vector* low, Vector* high) {
   setSize(objArray.size());
 
   root = new BVMNode(low, high);
@@ -115,29 +116,29 @@ BVM::BVM(std::vector<Hittable*> objArray, Vector low, Vector high) {
 
 }
 
-bool boxIntersect(Vector origin, Vector direction, Vector lo, Vector hi) {
+bool boxIntersect(Vector* origin, Vector* direction, Vector* lo, Vector* hi) {
   double minT = std::numeric_limits<double>::min();
   double maxT = std::numeric_limits<double>::max();
 
-  if (direction.x != 0) {
-    double x1t = (lo.x - origin.x)/direction.x;
-    double x2t = (hi.x - origin.x)/direction.x;
+  if (direction->x != 0) {
+    double x1t = (lo->x - origin->x)/direction->x;
+    double x2t = (hi->x - origin->x)/direction->x;
 
     minT = std::max(minT, std::min(x1t, x2t));
     maxT = std::min(maxT, std::max(x1t, x2t));
   }
 
-  if (direction.y != 0) {
-    double y1t = (lo.y - origin.y)/direction.y;
-    double y2t = (hi.y - origin.y)/direction.y;
+  if (direction->y != 0) {
+    double y1t = (lo->y - origin->y)/direction->y;
+    double y2t = (hi->y - origin->y)/direction->y;
 
     minT = std::max(minT, std::min(y1t, y2t));
     maxT = std::min(maxT, std::max(y1t, y2t));
   }
 
-  if (direction.z != 0) {
-    double z1t = (lo.z - origin.z)/direction.z;
-    double z2t = (hi.z - origin.z)/direction.z;
+  if (direction->z != 0) {
+    double z1t = (lo->z - origin->z)/direction->z;
+    double z2t = (hi->z - origin->z)/direction->z;
 
     minT = std::max(minT, std::min(z1t, z2t));
     maxT = std::min(maxT, std::max(z1t, z2t));
@@ -145,7 +146,7 @@ bool boxIntersect(Vector origin, Vector direction, Vector lo, Vector hi) {
   return maxT > minT;
 }
 
-Hittable* recIntersect(BVM::BVMNode* subroot, Vector pos, Vector vect) {
+Hittable* recIntersect(BVM::BVMNode* subroot, Vector* pos, Vector* vect) {
   if (subroot == NULL) {
     return NULL;
   }
@@ -175,15 +176,17 @@ Hittable* recIntersect(BVM::BVMNode* subroot, Vector pos, Vector vect) {
   }
 }
 
-Hittable* BVM::intersect(Vector pos, Vector vect) {
+Hittable* BVM::intersect(Vector* pos, Vector* vect) {
   return recIntersect(root, pos, vect);
 }
+
+//---------------------------------------------------------------------------
 
 nonBVM::nonBVM(std::vector<Hittable*> list, Vector low, Vector high) {
   _list = list;
 }
 
-Hittable* nonBVM::intersect(Vector pos, Vector vect) {
+Hittable* nonBVM::intersect(Vector* pos, Vector* vect) {
   double shortest = std::numeric_limits<double>::max();
   Hittable* nearest = NULL;
   for (Hittable* obj : _list) {

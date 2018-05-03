@@ -11,7 +11,13 @@ int const RES_HEIGHT = 400;
 
 double const PIX_SIZE = .01;
 
-
+/*
+takes 52 seconds:
+400x400
+teapot
+pix_size = 0.01
+standard -5, 5, 5, 1 -1 -1
+*/
 //for 900x900 bunny
 //double const PIX_SIZE = .016;
 
@@ -88,49 +94,49 @@ png::color Renderer::pixelAdd(png::color color1, png::color color2) {
 
 }
 
-png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, Vector fromLight, Hittable* object) {
-  Vector toLight = fromLight.scalar(-1);
+png::color Renderer::phongModel(const Vector* castPoint, const Vector* castRay, double tVal, const Vector* fromLight, Hittable* object) {
+    Vector toLight = fromLight->scalar(-1);
 
-  //ambient term
-  png::color ambient = pixelMultiply(object->getAmbientK(), AMBIENT_COLOR);
+    //ambient term
+    png::color ambient = pixelMultiply(object->getAmbientK(), AMBIENT_COLOR);
 
-  //diffuse term
-  Vector collisionPoint = castPoint + castRay.scalar(tVal);
+    //diffuse term
+    Vector collisionPoint = *castPoint + castRay->scalar(tVal);
 
-  png::color diffuse = png::color(0, 0, 0);;
-  //check if the object's blocking the light. leave at 0 if it is.
-  Vector normal = object->getNorm(collisionPoint);
-  if ( normal.dot(toLight) > 0) {
-
-    double coefficient = toLight.normalize().dot(object->getNorm(collisionPoint));
+    png::color diffuse = png::color(0, 0, 0);;
+    //check if the object's blocking the light. leave at 0 if it is.
+    Vector normal = object->getNorm(&collisionPoint);
+    if ( normal.dot(&toLight) > 0) {
+      //@TODO see if this still works, used to be object->getNorm
+    double coefficient = toLight.normalize().dot(&normal);
 
     diffuse = pixelMultiply(object->getDiffuseK(), LIGHT_COLOR);
     diffuse = pixelScalar(diffuse, coefficient);
 
-  }
+    }
 
-  //specular term
+    //specular term
 
-  //reflection equation
-  png::color specular = png::color(0, 0, 0);
+    //reflection equation
+    png::color specular = png::color(0, 0, 0);
 
-  //Finding "reflection" vector, using projection of light onto normal.
-  Vector projection = normal.scalar(normal.dot(toLight)/(normal.length() * normal.length()));
-  Vector reflection = fromLight + projection.scalar(2);
+    //Finding "reflection" vector, using projection of light onto normal.
+    Vector projection = normal.scalar(normal.dot(&toLight)/(normal.length() * normal.length()));
+    Vector reflection = *fromLight + projection.scalar(2);
 
 
-  if ( /*normal.dot(toLight)*/ -reflection.dot(castRay) > 0) {
+    if ( /*normal.dot(toLight)*/ -reflection.dot(castRay) > 0) {
     double specularCoeff = pow(-reflection.dot(castRay), object->getSpecularExp() );
 
     specular = pixelScalar(object->getSpecularK(), specularCoeff);
     specular = pixelMultiply(specular, LIGHT_COLOR);
 
-  }
+    }
 
 
-  png::color totalColor = pixelAdd(pixelAdd(ambient, diffuse), specular);
-  //png::color totalColor = pixelAdd(ambient, diffuse);
-  return totalColor;
+    png::color totalColor = pixelAdd(pixelAdd(ambient, diffuse), specular);
+    //png::color totalColor = pixelAdd(ambient, diffuse);
+    return totalColor;
 }
 
 Vector Renderer::getVertex(const std::string& line) {
@@ -232,8 +238,8 @@ void Renderer::run() {
   std::cout << highest.toString() << " " << lowest.toString() << std::endl;
 
 
-  //nonBVM objCollection = nonBVM(objectsList, lowest, highest);
-  BVM objCollection = BVM(objectsList, lowest, highest);
+  //nonBVM objCollection = nonBVM(objectsList, &lowest, &highest);
+  BVM objCollection = BVM(objectsList, &lowest, &highest);
 
 
   //objCollection.printTree();
@@ -250,7 +256,7 @@ void Renderer::run() {
     for (int r = 0; r < RES_HEIGHT; r++) {
       //Setting the location of each pixel, its point, and vector.
       Vector horizUnit = camVect.getOrthoNormRight().normalize().scalar(PIX_SIZE);
-      Vector vertUnit = horizUnit.cross(camVect).normalize().scalar(PIX_SIZE);
+      Vector vertUnit = horizUnit.cross(&camVect).normalize().scalar(PIX_SIZE);
 
 
       Vector pixelLoc = camPoint + horizUnit.scalar(-c + RES_WIDTH/2 + 0.5) + vertUnit.scalar(-r + RES_HEIGHT/2 + 0.5);
@@ -282,12 +288,12 @@ void Renderer::run() {
         //Finding the closest "collision", looking through every object
         double minT = nan("1");
 
-        Hittable* closestObj = objCollection.intersect(pixPoint, pixVect);
+        Hittable* closestObj = objCollection.intersect(&pixPoint, &pixVect);
         if (closestObj != NULL) {
-          minT = closestObj->collideT(pixPoint, pixVect);
+          minT = closestObj->collideT(&pixPoint, &pixVect);
 
           //set the pixel color to the color of the object
-          png::color phongColor = phongModel(pixPoint, pixVect, minT, LIGHT_DIRECTION, closestObj);
+          png::color phongColor = phongModel(&pixPoint, &pixVect, minT, &LIGHT_DIRECTION, closestObj);
           allReds += phongColor.red;
           allGreens += phongColor.green;
           allBlues += phongColor.blue;

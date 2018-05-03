@@ -17,9 +17,9 @@ struct Color {
 class Hittable {
 public:
 
-  virtual double collideT(Vector point, Vector direction) = 0;
-  virtual bool collisionDeterm(Vector point, Vector direction) = 0;
-  virtual Vector getNorm(Vector collisionPoint) = 0;
+  virtual double collideT(const Vector* point, const Vector* direction) = 0;
+  virtual bool collisionDeterm(const Vector* point, const Vector* direction) = 0;
+  virtual Vector getNorm(Vector* collisionPoint) = 0;
   virtual Vector getCenter() = 0;
   virtual Vector getFarthest(Vector point) = 0;
   virtual Vector loCorner() = 0;

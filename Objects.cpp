@@ -10,8 +10,8 @@ Sphere::Sphere(Vector newLoc, double newRadius, png::color ambient, png::color d
   setSpecularExp(specularExp);
 }
 
-Vector Sphere::getNorm(Vector collisionPoint) {
-  Vector v = (collisionPoint - location).normalize();
+Vector Sphere::getNorm(Vector* collisionPoint) {
+  Vector v = (*collisionPoint - location).normalize();
   return v;
 }
 
@@ -40,32 +40,37 @@ Vector Sphere::hiCorner() {
   return Vector(x, y, z);
 }
 
-bool Sphere::collisionDeterm(Vector point, Vector direction) {
-  double a = direction.dot(direction);
-  double b = ((point-location).scalar(2) ).dot(direction);
-  double c = (point-location).dot( (point - location) ) - (radius*radius);
-  return (b*b - 4*a*c) >= 0;
+bool Sphere::collisionDeterm(const Vector* point, const Vector* direction) {
+    Vector loc2Point = *point - location;
+
+    double a = direction->dot(direction);
+    double b = ((*point-location).scalar(2) ).dot(direction);
+    double c = loc2Point.dot( &loc2Point ) - (radius*radius);
+    return (b*b - 4*a*c) >= 0;
 }
 
-double Sphere::collideT(Vector point, Vector direction) {
-  double a = direction.dot(direction);
-  double b = ((point-location).scalar(2) ).dot(direction);
-  double c = (point-location).dot( (point - location) ) - (radius*radius);
+double Sphere::collideT(const Vector* point, const Vector* direction) {
+    Vector loc2Point = (*point - location);
 
-  double potentialT1 = ( (-1*b) + sqrt(b*b - 4*a*c) ) / (2*a);
-  double potentialT2 = ( (-1*b) - sqrt(b*b - 4*a*c) ) / (2*a);
+    double a = direction->dot(direction);
+    double b = (loc2Point.scalar(2) ).dot(direction);
+    double c = loc2Point.dot( &loc2Point ) - (radius*radius);
 
-  double tVal;
+    double potentialT1 = ( (-1*b) + sqrt(b*b - 4*a*c) ) / (2*a);
+    double potentialT2 = ( (-1*b) - sqrt(b*b - 4*a*c) ) / (2*a);
 
-  if (potentialT1 < 0 || isnan(potentialT1)) {
+    double tVal;
+
+    if (potentialT1 < 0 || isnan(potentialT1)) {
     tVal = potentialT2;
-  } else if (potentialT2 < 0 || isnan(potentialT2)) {
+    } else if (potentialT2 < 0 || isnan(potentialT2)) {
     tVal = potentialT1;
-  } else {
+    } else {
     tVal = std::min(potentialT1, potentialT2);
-  }
+    }
 
-  return tVal;
+
+    return tVal;
 }
 
 
@@ -79,12 +84,14 @@ Plane::Plane(Vector p1, Vector p2, Vector p3, png::color ambient, png::color dif
   setSpecularExp(specularExp);
 }
 
-Vector Plane::getNorm(Vector collisionPoint) {
+Vector Plane::getNorm(Vector* collisionPoint) {
   //Cross product of 1->3 and 1->2. Follows right-hand-rule of the 3 points in a clockwise order
-  return ((point1-point3).cross(point1-point2)).normalize();
+  Vector point2to1 = (point1-point2);
+  Vector result = ((point1-point3).cross(&point2to1)).normalize();
+  return result;
 }
 
-bool Plane::collisionDeterm(Vector point, Vector direction) {
+bool Plane::collisionDeterm(const Vector* point, const Vector* direction) {
   return true;
 }
 
@@ -108,13 +115,13 @@ Vector Plane::loCorner() {
   return point1;
 }
 
-double Plane::collideT(Vector origin, Vector direction) {
+double Plane::collideT(const Vector* origin, const Vector* direction) {
   // ((a-o)dot n)/(d dot n)
-  Vector normal = Plane::getNorm(Vector());
+  Vector normal = Plane::getNorm(nullptr);
   if (normal.dot(direction) == 0) {
     return nan("1");
   }
-  return ( (point1 - origin).dot(normal) ) / (direction.dot(normal));
+  return ( (point1 - *origin).dot(&normal) ) / (direction->dot(&normal));
 }
 
 
@@ -129,9 +136,10 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, png::color ambient, png::col
   setSpecularExp(specularExp);
 }
 
-Vector Triangle::getNorm(Vector collisionPoint) {
+Vector Triangle::getNorm(Vector* collisionPoint) {
   //Cross product of 1->3 and 1->2. Follows right-hand-rule of the 3 points in a counter-clockwise order
-  return ((point1-point2).cross(point1-point3)).normalize();
+  Vector from3to1 = point1-point3;
+  return ((point1-point2).cross(&from3to1)).normalize();
 }
 
 Vector Triangle::getCenter() {
@@ -182,27 +190,30 @@ Vector Triangle::hiCorner() {
   return Vector(x, y, z);
 }
 
-bool Triangle::collisionDeterm(Vector point, Vector direction) {
+bool Triangle::collisionDeterm(const Vector* point, const Vector* direction) {
   return true;
 }
 
 double Triangle::getArea() {
-  return getArea(point1, point2, point3);
+  return getArea(&point1, &point2, &point3);
 }
 
-double Triangle::getArea(Vector first, Vector second, Vector third) {
-  return ((first-third).cross(first-second)).length()/2;
+double Triangle::getArea(Vector* first, Vector* second, Vector* third) {
+    Vector secondToFirst = Vector(*first - *second);
+    return ((*first-*third).cross(&secondToFirst)).length()/2;
 }
 
-double Triangle::collideT(Vector origin, Vector direction) {
+double Triangle::collideT(const Vector* origin, const Vector* direction) {
   // ((a-o)dot n)/(d dot n)
-  Vector normal = Triangle::getNorm(Vector());
-  double tVal = ( (point1 - origin).dot(normal) ) / (direction.dot(normal));
+  Vector normal = Triangle::getNorm(nullptr);
+  double tVal = ( (point1 - *origin).dot(&normal) ) / (direction->dot(&normal));
   if (isnan(tVal) || normal.dot(direction) >= 0) {
     return nan("1");
   }
-  Vector collisionPoint = origin + direction.scalar(tVal);
-  double baryCentArea = getArea(point1, point2, collisionPoint) + getArea(point2, point3, collisionPoint) + getArea(point3, point1, collisionPoint);
+  Vector collisionPoint = *origin + direction->scalar(tVal);
+  double baryCentArea = getArea(&point1, &point2, &collisionPoint)
+                        + getArea(&point2, &point3, &collisionPoint)
+                        + getArea(&point3, &point1, &collisionPoint);
 
   double threshold = 0.000000000001;
   if (baryCentArea > getArea() + threshold) {
