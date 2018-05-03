@@ -14,12 +14,9 @@ public:
 
   void setSize(size_t newSize) {size = newSize;}
   size_t getSize() { return size; }
-  void setObjArray(Hittable** newObj) {objects = newObj;}
-  Hittable** objArray() { return objects; }
 
 private:
   size_t size;
-  Hittable** objects;
 
 };
 
@@ -29,7 +26,7 @@ public:
 
   struct BVMNode {
 
-    BVMNode(Vector lo, Vector hi) : axis(-1), obj(NULL){
+    BVMNode(Vector lo, Vector hi) : axis(-1), left(NULL), right(NULL), obj(NULL) {
       loPoint = lo;
       hiPoint = hi;
     };
@@ -51,8 +48,10 @@ public:
 
   };
 
-  BVM(Hittable** objArray, size_t size, Vector low, Vector high);
+  BVM(std::vector<Hittable*> objArray, Vector low, Vector high);
+
   Hittable* intersect(Vector pos, Vector vect);
+
   void printTree() {
     recPrint(root);
   }
@@ -75,11 +74,13 @@ private:
 
 };
 
-class nonBVM : objectCollection {
+class nonBVM : public objectCollection {
 public:
-  nonBVM(Hittable** objArray, size_t size);
+  nonBVM(std::vector<Hittable*> list, Vector low, Vector high);
   Hittable* intersect(Vector pos, Vector vect);
 
+private:
+  std::vector<Hittable*> _list;
 };
 
 

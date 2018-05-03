@@ -3,6 +3,7 @@
 
 #include "Objects.h"
 #include "Vector.h"
+#include <vector>
 #include <iostream>
 #include <png++/png.hpp>
 #include <png++/image.hpp>
@@ -15,6 +16,8 @@
 class Renderer {
 public:
   void run();
+
+  Vector getVertex(const std::string& line);
 private:
   double logit(double input);
 

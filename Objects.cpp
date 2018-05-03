@@ -130,8 +130,8 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, png::color ambient, png::col
 }
 
 Vector Triangle::getNorm(Vector collisionPoint) {
-  //Cross product of 1->3 and 1->2. Follows right-hand-rule of the 3 points in a clockwise order
-  return ((point1-point3).cross(point1-point2)).normalize();
+  //Cross product of 1->3 and 1->2. Follows right-hand-rule of the 3 points in a counter-clockwise order
+  return ((point1-point2).cross(point1-point3)).normalize();
 }
 
 Vector Triangle::getCenter() {
@@ -169,16 +169,16 @@ Vector Triangle::getFarthest(Vector point) {
 }
 
 Vector Triangle::loCorner() {
-  double x = std::min(point1.x, std::min(point2.x, point3.x) );
-  double y = std::min(point1.y, std::min(point2.y, point3.y) );
-  double z = std::min(point1.z, std::min(point2.z, point3.z) );
+  double x = std::min(point1.x, std::min(point2.x, point3.x) ) - 0.0001;
+  double y = std::min(point1.y, std::min(point2.y, point3.y) ) - 0.0001;
+  double z = std::min(point1.z, std::min(point2.z, point3.z) ) - 0.0001;
   return Vector(x, y, z);
 }
 
 Vector Triangle::hiCorner() {
-  double x = std::max(point1.x, std::max(point2.x, point3.x) );
-  double y = std::max(point1.y, std::max(point2.y, point3.y) );
-  double z = std::max(point1.z, std::max(point2.z, point3.z) );
+  double x = std::max(point1.x, std::max(point2.x, point3.x) ) + 0.0001;
+  double y = std::max(point1.y, std::max(point2.y, point3.y) ) + 0.0001;
+  double z = std::max(point1.z, std::max(point2.z, point3.z) ) + 0.0001;
   return Vector(x, y, z);
 }
 
@@ -204,7 +204,7 @@ double Triangle::collideT(Vector origin, Vector direction) {
   Vector collisionPoint = origin + direction.scalar(tVal);
   double baryCentArea = getArea(point1, point2, collisionPoint) + getArea(point2, point3, collisionPoint) + getArea(point3, point1, collisionPoint);
 
-  double threshold = 0.001;
+  double threshold = 0.000000000001;
   if (baryCentArea > getArea() + threshold) {
     return nan("1");
   } else {

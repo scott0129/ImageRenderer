@@ -35,6 +35,10 @@ public:
     return Vector(newX, newY, newZ);
   }
 
+  Vector getOrthoNormRight() const {
+    return Vector(this->y, -this->x, 0).normalize();
+  }
+
 
   Vector cross(const Vector& other) const {
     double newX = this->y * other.z - this->z * other.y;

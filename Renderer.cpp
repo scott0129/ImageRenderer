@@ -1,19 +1,27 @@
 #include "Renderer.h"
+#include <fstream>
+#include <stdlib.h>
+
 
 //Some constants:
-int const RES_WIDTH= 500;
-int const RES_HEIGHT = 500;
+std::string const INPUT_FILENAME = "teapot.obj";
+std::string const OUTPUT_FILENAME = "teapot_BVM_400x400.png";
+int const RES_WIDTH= 400;
+int const RES_HEIGHT = 400;
 
-int const NUM_SPHERES = 500;
+double const PIX_SIZE = .01;
 
-double const PIX_SIZE = .1;
+
+//for 900x900 bunny
+//double const PIX_SIZE = .016;
 
 double const FOCAL_DIST = 50;
 
 //Anti-aliasing coeff. Number of vectors shot through each pixel.
 int const AA_COEFF = 1;
 
-Vector const LIGHT_DIRECTION = Vector(-0.6, 0.6, 0.6).normalize();
+Vector const LIGHT_DIRECTION = Vector(0.7, -0.3, -0.4).normalize();
+
 png::color const LIGHT_COLOR = png::color(255, 255, 255);
 
 png::color const AMBIENT_COLOR = png::color(255, 255, 255);
@@ -64,11 +72,25 @@ png::color Renderer::pixelAdd(png::color color1, png::color color2) {
   double blue = sigmoid( (logit(color1.blue/255.0) + logit(color2.blue/255.0)) )* 255.0;
 
 
+  //clamp method
+  // double red = color1.red+ color2.red;
+  // double green = color1.green+ color2.green;
+  // double blue = color1.blue+ color2.blue;
+  //
+  // double max = std::max(red, std::max(green, blue));
+  // if (max > 255) {
+  //     red *= 255/max;
+  //     green *= 255/max;
+  //     blue *= 255/max;
+  // }
+
   return png::color(red, green, blue);
 
 }
 
-png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, Vector toLight, Hittable* object) {
+png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, Vector fromLight, Hittable* object) {
+  Vector toLight = fromLight.scalar(-1);
+
   //ambient term
   png::color ambient = pixelMultiply(object->getAmbientK(), AMBIENT_COLOR);
 
@@ -91,7 +113,6 @@ png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, V
 
   //reflection equation
   png::color specular = png::color(0, 0, 0);
-  Vector fromLight = toLight.scalar(-1);
 
   //Finding "reflection" vector, using projection of light onto normal.
   Vector projection = normal.scalar(normal.dot(toLight)/(normal.length() * normal.length()));
@@ -109,39 +130,93 @@ png::color Renderer::phongModel(Vector castPoint, Vector castRay, double tVal, V
 
   png::color totalColor = pixelAdd(pixelAdd(ambient, diffuse), specular);
   //png::color totalColor = pixelAdd(ambient, diffuse);
-
-
   return totalColor;
+}
+
+Vector Renderer::getVertex(const std::string& line) {
+  int end = line.length() - 1;
+  while (line.substr(end, 1) == " ") {
+    end--;
+  }
+
+  double axes[3];
+  int count = 2;
+
+  for (int i = end - 1; i > 0; i--) {
+    if (line.substr(i, 1) == " ") {
+      const char* charArray = line.substr(i + 1, end - i + 1).c_str();
+
+      axes[count] = strtod(charArray, NULL);
+      count--;
+      end = i;
+    }
+  }
+
+  return Vector(axes[0], axes[1], axes[2]);
 }
 
 void Renderer::run() {
 
-  srand(5);
+  srand(1);
 
-  std::cout << "Beginning to draw " << NUM_SPHERES << " spheres, starting at: " << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
+  std::cout << "Beginning to draw objects, starting at: " << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
 
 
-  Hittable* objectsList[NUM_SPHERES];
+  std::vector<Hittable*> objectsList;
 
   //generate all spheres and save in array
-  for (int i = 0; i < NUM_SPHERES; i++) {
-    Vector sphereLoc = Vector(300 + rand()%100, rand()%200 - 100, rand()%200 - 100);
-    png::color ambient = png::color(rand()%255, rand()%255, rand()%255);
-    png::color diffuse = png::color(rand()%255, rand()%255, rand()%255);
-    png::color specular = png::color(rand()%255, rand()%255, rand()%255);
-    Sphere* s = new Sphere(sphereLoc, 7, ambient, diffuse, specular, 30);
-    objectsList[i] = s;
-    if (sphereLoc[0] == 373.0) {
-      std::cout << "brokenSphere High: " << s->hiCorner().toString() << " low: " << s->loCorner().toString() << std::endl;
-    }
-  }
 
+  // for (int i = 0; i < NUM_OBJECTS; i++) {
+  //   Vector sphereLoc = Vector(-0.5 + (rand()%1000)/1000.0, -0.5 + (rand()%1000)/1000.0, -0.5 + (rand()%1000)/1000.0);
+  //   //Vector sphereLoc = Vector(300, 0, 0);
+  //   png::color ambient = png::color(rand()%55, rand()%55, rand()%55);
+  //   png::color diffuse = png::color(rand()%100 + 50, rand()%100 + 50, rand()%100 + 50);
+  //   png::color specular = png::color(255, 255, 255);
+  //   Sphere* s = new Sphere(sphereLoc, 0.01, ambient, diffuse, specular, 30);
+  //   objectsList.push_back(s);
+  // }
+
+
+  // Vector trig1 = Vector(0, -0.5, -0.5);
+  // Vector trig2 = Vector(0, 0.5, -0.5);
+  // Vector trig3 = Vector(0, 0, 0.5);
+  //
+  png::color ambient = png::color(10, 10, 10);
+  png::color diffuse = png::color(60, 60, 60);
+  png::color specular = png::color(255, 255, 255);
+  // Triangle* s = new Triangle(trig1, trig2, trig3, ambient, diffuse, specular, 30);
+  // objectsList.push_back(s);
+
+  std::vector<Vector> vertexes;
+
+  std::fstream inFile;
+  inFile.open(INPUT_FILENAME);
+
+  std::string line;
+  if (inFile.is_open()) {
+		while (getline(inFile, line)) {
+      if (line.substr(0, 1) == "v") {
+        vertexes.push_back(getVertex(line));
+      } else if (line.substr(0, 1) == "f") {
+        Vector tuple = getVertex(line);
+
+        Triangle* newShape = new Triangle(vertexes[(int) tuple[0] - 1], vertexes[(int)tuple[1] - 1], vertexes[(int) tuple[2] - 1],
+                                      ambient, diffuse, specular, 10);
+        objectsList.push_back(newShape);
+      }
+		}
+	}
+
+  inFile.close();
+
+  // Sphere* s = new Sphere(Vector(0, 0, 0), 0.7, ambient, diffuse, specular, 30);
+  // objectsList.push_back(s);
 
 
   //find lowest point and highest bound of all objects
   Vector lowest = objectsList[0]->loCorner();
   Vector highest = objectsList[0]->hiCorner();
-  for (int i = 1; i < NUM_SPHERES; i++) {
+  for (size_t i = 1; i < objectsList.size(); i++) {
     Vector currentLo = objectsList[i]->loCorner();
     Vector currentHi = objectsList[i]->hiCorner();
     for (int dim = 0; dim < 3; dim++) {
@@ -156,53 +231,45 @@ void Renderer::run() {
 
   std::cout << highest.toString() << " " << lowest.toString() << std::endl;
 
-  // png::color ambient1 = png::color(rand()%255, rand()%255, rand()%255);
-  // png::color diffuse1 = png::color(rand()%255, rand()%255, rand()%255);
-  // png::color specular1 = png::color(rand()%255, rand()%255, rand()%255);
-  // Sphere* s1 = new Sphere(lowest, 3, ambient1, diffuse1, specular1, 30);
-  //
-  // png::color ambient2 = png::color(rand()%255, rand()%255, rand()%255);
-  // png::color diffuse2 = png::color(rand()%255, rand()%255, rand()%255);
-  // png::color specular2 = png::color(rand()%255, rand()%255, rand()%255);
-  // Sphere* s2 = new Sphere(highest, 3, ambient2, diffuse2, specular2, 30);
-  // objectsList[NUM_SPHERES - 1] = s1;
-  // objectsList[NUM_SPHERES - 2] = s2;
+
+  //nonBVM objCollection = nonBVM(objectsList, lowest, highest);
+  BVM objCollection = BVM(objectsList, lowest, highest);
 
 
-  BVM objCollection = BVM(objectsList, NUM_SPHERES, lowest, highest);
-  //nonBVM objCollection = nonBVM(objectsList, NUM_SPHERES);
-
-  objCollection.printTree();
+  //objCollection.printTree();
 
   std::cout << "Finished building tree by "  << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
 
-  Vector camPoint = Vector(0, 0, 0);
-  Vector camVect = Vector(1, 0, 0);
+  Vector camPoint = Vector(-5, 5, 5);
+  Vector camVect = Vector(1, -1, -1).normalize();
 
   png::image<png::rgb_pixel> picture = png::image<png::rgb_pixel>(RES_WIDTH, RES_HEIGHT);
 
 
   for(int c = 0; c < RES_WIDTH; c++) {
     for (int r = 0; r < RES_HEIGHT; r++) {
-        //Setting the location of each pixel, its point, and vector.
-      double pixY = PIX_SIZE * (c - RES_WIDTH/2 + 0.5);
-      double pixZ = PIX_SIZE * (-r + RES_HEIGHT/2 + 0.5);
+      //Setting the location of each pixel, its point, and vector.
+      Vector horizUnit = camVect.getOrthoNormRight().normalize().scalar(PIX_SIZE);
+      Vector vertUnit = horizUnit.cross(camVect).normalize().scalar(PIX_SIZE);
+
+
+      Vector pixelLoc = camPoint + horizUnit.scalar(-c + RES_WIDTH/2 + 0.5) + vertUnit.scalar(-r + RES_HEIGHT/2 + 0.5);
 
       int allReds = 0;
       int allGreens = 0;
       int allBlues = 0;
 
       for(int vectNum = 0; vectNum < AA_COEFF; vectNum++) {
-        double yJitter;
-        double zJitter;
+        Vector yJitter;
+        Vector zJitter;
         if (AA_COEFF == 1) {
-          yJitter = 0;
-          zJitter = 0;
+          yJitter = Vector(0, 0, 0);
+          zJitter = Vector(0, 0, 0);
         } else {
-          yJitter = PIX_SIZE*(rand()%1000 - 500)/1000.0;
-          zJitter = PIX_SIZE*(rand()%1000 - 500)/1000.0;
+          yJitter = horizUnit.scalar((rand()%1000 - 500)/1000.0);
+          zJitter = vertUnit.scalar((rand()%1000 - 500)/1000.0);
         }
-        Vector pixPoint = Vector(0, pixY + yJitter, pixZ + zJitter);
+        Vector pixPoint = pixelLoc + yJitter + zJitter;
         Vector pixVect;
 
         if (ORTHOGRAPHIC) {
@@ -219,7 +286,7 @@ void Renderer::run() {
         if (closestObj != NULL) {
           minT = closestObj->collideT(pixPoint, pixVect);
 
-          //set the pixel color to the color of the object doing crazy math
+          //set the pixel color to the color of the object
           png::color phongColor = phongModel(pixPoint, pixVect, minT, LIGHT_DIRECTION, closestObj);
           allReds += phongColor.red;
           allGreens += phongColor.green;
@@ -238,7 +305,7 @@ void Renderer::run() {
 
   }
 
-  picture.write("test.png");
+  picture.write(OUTPUT_FILENAME);
 
   std::cout << "done! At " << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
 

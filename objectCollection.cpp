@@ -104,14 +104,12 @@ void recInsert(BVM::BVMNode* subroot, Hittable* object) {
   }
 }
 
-BVM::BVM(Hittable** objArray, size_t size, Vector low, Vector high) {
-
-  setSize(size);
-  setObjArray(objArray);
+BVM::BVM(std::vector<Hittable*> objArray, Vector low, Vector high) {
+  setSize(objArray.size());
 
   root = new BVMNode(low, high);
 
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < objArray.size(); i++) {
     recInsert(root, objArray[i]);
   }
 
@@ -181,24 +179,26 @@ Hittable* BVM::intersect(Vector pos, Vector vect) {
   return recIntersect(root, pos, vect);
 }
 
-
-
-nonBVM::nonBVM(Hittable** objArray, size_t size) {
-  setSize(size);
-  setObjArray(objArray);
+nonBVM::nonBVM(std::vector<Hittable*> list, Vector low, Vector high) {
+  _list = list;
 }
 
 Hittable* nonBVM::intersect(Vector pos, Vector vect) {
-  double minT = nan("1");
-  Hittable* closestObj = NULL;
-
-  for(size_t i = 0; i < getSize(); i++) {
-    double tVal = objArray()[i]->collideT(pos, vect);
-    if ((isnan(minT) && !isnan(tVal) )|| tVal < minT) {
-      minT = tVal;
-      closestObj = objArray()[i];
+  double shortest = std::numeric_limits<double>::max();
+  Hittable* nearest = NULL;
+  for (Hittable* obj : _list) {
+    double dist = obj->collideT(pos, vect);
+    if (!isnan(dist)) {
+      if (shortest > dist) {
+        shortest = dist;
+        nearest = obj;
+      }
     }
-  }
 
-  return closestObj;
+  }
+  if (nearest != NULL) {
+    return nearest;
+  } else {
+    return NULL;
+  }
 }
