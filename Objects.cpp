@@ -205,20 +205,34 @@ double Triangle::getArea(Vector* first, Vector* second, Vector* third) {
 
 double Triangle::collideT(const Vector* origin, const Vector* direction) {
   // ((a-o)dot n)/(d dot n)
-  Vector normal = Triangle::getNorm(nullptr);
-  double tVal = ( (point1 - *origin).dot(&normal) ) / (direction->dot(&normal));
-  if (isnan(tVal) || normal.dot(direction) >= 0) {
-    return nan("1");
-  }
-  Vector collisionPoint = *origin + direction->scalar(tVal);
-  double baryCentArea = getArea(&point1, &point2, &collisionPoint)
-                        + getArea(&point2, &point3, &collisionPoint)
-                        + getArea(&point3, &point1, &collisionPoint);
+    Vector normal = Triangle::getNorm(nullptr);
+    double tVal = ( (point1 - *origin).dot(&normal) ) / (direction->dot(&normal));
+    if (isnan(tVal) || normal.dot(direction) >= 0) {
+        return nan("1");
+    }
+    Vector collisionPoint = *origin + direction->scalar(tVal);
 
-  double threshold = 0.000000000001;
-  if (baryCentArea > getArea() + threshold) {
+    double thisArea = getArea();
+
+    double sect1 = getArea(&point1, &point2, &collisionPoint);
+    if (sect1 > thisArea) {
+        return nan("1");
+    }
+    double sect2 = getArea(&point2, &point3, &collisionPoint);
+    if (sect2 > thisArea) {
+        return nan("1");
+    }
+    double sect3 = getArea(&point3, &point1, &collisionPoint);
+    if (sect3 > thisArea) {
+        return nan("1");
+    }
+
+    double baryCentArea = sect1 + sect2 + sect3;
+
+    double threshold = 0.000000000001;
+    if (baryCentArea > getArea() + threshold) {
     return nan("1");
-  } else {
+    } else {
     return tVal;
-  }
+}
 }

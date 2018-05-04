@@ -59,6 +59,21 @@ public:
 
   Hittable* intersect(Vector* pos, Vector* vect);
 
+  std::vector<int> getHeights() {
+      std::vector<int> vect;
+      getRecHeight(root, &vect, 0);
+      return vect;
+  }
+
+  void getRecHeight(BVMNode* sroot, std::vector<int>* vector, int dist) {
+      if (sroot == NULL) {
+          vector->push_back(dist);
+          return;
+      }
+      getRecHeight(sroot->left, vector, dist + 1);
+      getRecHeight(sroot->right, vector, dist + 1);
+  }
+
   void printTree() {
     recPrint(root);
   }

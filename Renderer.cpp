@@ -1,15 +1,16 @@
 #include "Renderer.h"
 #include <fstream>
 #include <stdlib.h>
-
+#include <algorithm>
+#include <map>
 
 //Some constants:
 std::string const INPUT_FILENAME = "teapot.obj";
-std::string const OUTPUT_FILENAME = "teapot_BVM_400x400.png";
-int const RES_WIDTH= 400;
-int const RES_HEIGHT = 400;
+std::string const OUTPUT_FILENAME = "teapot_BVH_1200x1200.png";
+int const RES_WIDTH= 1200;
+int const RES_HEIGHT = 1200;
 
-double const PIX_SIZE = .01;
+double const PIX_SIZE = .005;
 
 /*
 takes 52 seconds:
@@ -18,6 +19,7 @@ teapot
 pix_size = 0.01
 standard -5, 5, 5, 1 -1 -1
 */
+
 //for 900x900 bunny
 //double const PIX_SIZE = .016;
 
@@ -170,23 +172,6 @@ void Renderer::run() {
 
   std::vector<Hittable*> objectsList;
 
-  //generate all spheres and save in array
-
-  // for (int i = 0; i < NUM_OBJECTS; i++) {
-  //   Vector sphereLoc = Vector(-0.5 + (rand()%1000)/1000.0, -0.5 + (rand()%1000)/1000.0, -0.5 + (rand()%1000)/1000.0);
-  //   //Vector sphereLoc = Vector(300, 0, 0);
-  //   png::color ambient = png::color(rand()%55, rand()%55, rand()%55);
-  //   png::color diffuse = png::color(rand()%100 + 50, rand()%100 + 50, rand()%100 + 50);
-  //   png::color specular = png::color(255, 255, 255);
-  //   Sphere* s = new Sphere(sphereLoc, 0.01, ambient, diffuse, specular, 30);
-  //   objectsList.push_back(s);
-  // }
-
-
-  // Vector trig1 = Vector(0, -0.5, -0.5);
-  // Vector trig2 = Vector(0, 0.5, -0.5);
-  // Vector trig3 = Vector(0, 0, 0.5);
-  //
   png::color ambient = png::color(10, 10, 10);
   png::color diffuse = png::color(60, 60, 60);
   png::color specular = png::color(255, 255, 255);
@@ -218,6 +203,7 @@ void Renderer::run() {
   // Sphere* s = new Sphere(Vector(0, 0, 0), 0.7, ambient, diffuse, specular, 30);
   // objectsList.push_back(s);
 
+  std::random_shuffle( objectsList.begin(), objectsList.end() );
 
   //find lowest point and highest bound of all objects
   Vector lowest = objectsList[0]->loCorner();
@@ -245,8 +231,17 @@ void Renderer::run() {
   //objCollection.printTree();
 
   std::cout << "Finished building tree by "  << (float)clock()/CLOCKS_PER_SEC << " seconds" << std::endl;
+  //std::cout << "tree max height: " << objCollection.getHeight() <<std::endl;;
+  // std::vector<int> treeHeights = objCollection.getHeights();
+  // std::map<int, int> heightCounts;
+  // for (int i : treeHeights) {
+  //     heightCounts[i]++;
+  // }
+  // for (auto pair : heightCounts) {
+  //     std::cout << "Height: " << pair.first << " had " << pair.second << std::endl;
+  // }
 
-  Vector camPoint = Vector(-5, 5, 5);
+  Vector camPoint = Vector(-5, 6.5, 5);
   Vector camVect = Vector(1, -1, -1).normalize();
 
   png::image<png::rgb_pixel> picture = png::image<png::rgb_pixel>(RES_WIDTH, RES_HEIGHT);
