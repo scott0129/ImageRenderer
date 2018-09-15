@@ -15,23 +15,23 @@
 
 class Renderer {
 public:
-  void run();
+    void run(int const argc, char* const argv[]);
 
-  Vector getVertex(const std::string& line);
+    Vector getVertex(const std::string& line);
 private:
-  double logit(double input);
+    double logit(double input);
 
-  double sigmoid(double input);
+    double sigmoid(double input);
 
-  png::color pixelScalar(png::color color1, double multip);
+    png::color pixelScalar(png::color color1, double multip);
 
-  png::color pixelMultiply(png::color color1, png::color color2);
+    png::color pixelMultiply(png::color color1, png::color color2);
 
-  png::color pixelAdd(png::color color1, png::color color2);
+    png::color pixelAdd(png::color color1, png::color color2);
 
-  png::color phongModel(const Vector* castPoint, const Vector* castRay, double tVal, const Vector* toLight, Hittable* object);
+    png::color phongModel(const Vector* castPoint, const Vector* castRay, double tVal, const Vector* toLight, Hittable* object);
 
-
+    void getArguments(int const argc, char* const argv[], std::string* inputFilename, std::string* outputFilename, int* width, int* height);
 };
 
 #endif
